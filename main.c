@@ -17,6 +17,13 @@ bool initialize_window(void) {
         fprintf(stderr, "Error initializing SDL.\n");
         return false;
     }
+
+    // // Set width and height of the SDL window with the max screen resolution
+    // SDL_DisplayMode display_mode;
+    // SDL_GetCurrentDisplayMode(0, &display_mode);
+    // win_width = display_mode.w;
+    // win_height = display_mode.h;
+
     // Create a SDL Window
     window = SDL_CreateWindow(
         NULL,
@@ -43,7 +50,13 @@ bool initialize_window(void) {
 
 void setup(void) {
     color_buffer = malloc(sizeof(uint32_t) * win_width * win_height);
-    color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, win_width, win_height);
+    color_buffer_texture = SDL_CreateTexture(
+        renderer, 
+        SDL_PIXELFORMAT_ARGB8888, 
+        SDL_TEXTUREACCESS_STREAMING,
+        win_width, 
+        win_height
+    );
 
 }
 
@@ -57,14 +70,33 @@ void render_color_buffer(void) {
     SDL_RenderCopy(renderer, color_buffer_texture, NULL, NULL);
 }
 
-void draw_grid(void) {
-    // TODO
+void draw_hor_line(int x1, int x2, int y, uint32_t color) {
+    for (int x=x1; x<x2; x++) {
+        color_buffer[win_width*y+x] = color  ;
+    }
 }
 
-void draw_color(void) {
-    for (uint8_t row=0; row<win_height; row++) {
-        for (uint8_t col=0; col<win_width; col++) {
-            color_buffer[win_width*row+col] = 0xFF00FFFF;
+void draw_vert_line(int y1, int y2, int x, uint32_t color) {
+    for (int y=y1; y<y2; y++) {
+        color_buffer[win_width*y+x] = color;
+    }
+}
+
+void draw_rectangle(int x, int y, int width, int height, uint32_t color) {
+    draw_hor_line(x, x+width, y, color);
+    draw_hor_line(x, x+width, y+height-1, color);
+    draw_vert_line(y, y+height, x, color);
+    draw_vert_line(y, y+height, x+width-1, color);
+}
+
+void draw_color(uint8_t margin, uint32_t color) {
+    for (uint32_t row=0; row<win_height; row++) {
+        for (uint32_t col=0; col<win_width; col++) {
+            if (row % margin == 0 || col % margin == 0)
+            {
+                color_buffer[win_width*row+col] = color;
+            }
+
         }
     }
 }
@@ -88,13 +120,11 @@ void tearDown(void) {
     free(color_buffer);
     SDL_DestroyTexture(color_buffer_texture);
     SDL_DestroyWindow(window);
-    SDL_DestroyRenderer(renderer);
+    SDL_Quit();
 }
 
 void update(void) {
     // TODO:
-    //draw_grid();
-    draw_color();
 }
 
 void render(void) {
@@ -102,8 +132,11 @@ void render(void) {
     SDL_RenderClear(renderer);
     
     render_color_buffer();
-    draw_color();
-    //...
+    //draw_color(100, 0xFF123456);
+    draw_rectangle(100, 100, 80, 40, 0xFFFF0000);
+    draw_rectangle(300, 400, 180, 140, 0xFFFFFF00);
+    draw_rectangle(400, 200, 80, 100, 0xFFFF00FF);
+    //draw_vert_line(0, 300, 0, 0xFFFF0000);
 
     SDL_RenderPresent(renderer);
 }
